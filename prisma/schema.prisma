@@ -1,0 +1,163 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             String           @id @default(cuid())
+  name           String
+  email          String?          @unique
+  createdAt      DateTime         @default(now())
+  sessions       Session[]
+  userStacks     UserStack[]
+  userChallenges UserChallenge[]
+  gamification   UserGamification?
+  badges         UserBadge[]
+
+  // Stack Única - apenas uma stack ativa por vez
+  activeStackId  String?
+  activeStack    Stack?           @relation("ActiveStack", fields: [activeStackId], references: [id])
+}
+
+model Session {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id])
+  phase       String    @default("abertura")
+  progress    Int       @default(10)
+  layers      String    // JSON string of layers state
+  startedAt   DateTime  @default(now())
+  completedAt DateTime?
+  messages    Message[]
+}
+
+model Message {
+  id        String   @id @default(cuid())
+  sessionId String
+  session   Session  @relation(fields: [sessionId], references: [id])
+  role      String   // 'user' | 'aurora'
+  content   String
+  timestamp DateTime @default(now())
+}
+
+// ============================================
+// Tool Stacks System
+// ============================================
+
+model Stack {
+  id           String      @id @default(cuid())
+  slug         String      @unique
+  name         String
+  description  String
+  icon         String      // emoji
+  color        String      // hex color
+  tools        String      // JSON array of tool names
+  profileMatch String      // JSON object for matching algorithm
+  order        Int         @default(0)
+  challenges   Challenge[]
+  userStacks   UserStack[]
+
+  // Relação inversa para activeStack do User
+  activeForUsers User[]    @relation("ActiveStack")
+}
+
+model Challenge {
+  id             String          @id @default(cuid())
+  stackId        String
+  stack          Stack           @relation(fields: [stackId], references: [id])
+  level          Int             // 1-5
+  name           String
+  type           String          // 'discover' | 'try' | 'apply' | 'integrate' | 'master'
+  description    String
+  duration       Int             // minutes
+  prompt         String          // base prompt for Anthropic
+  content        String          // JSON with quiz/exercise content
+  userChallenges UserChallenge[]
+
+  @@unique([stackId, level])
+}
+
+model UserStack {
+  id           String    @id @default(cuid())
+  userId       String
+  user         User      @relation(fields: [userId], references: [id])
+  stackId      String
+  stack        Stack     @relation(fields: [stackId], references: [id])
+  status       String    @default("locked") // 'locked' | 'unlocked' | 'in_progress' | 'completed'
+  unlockedAt   DateTime?
+  completedAt  DateTime?
+  currentLevel Int       @default(0)
+
+  // Stack Única - apenas uma isActive=true por usuário
+  isActive     Boolean   @default(false)
+
+  @@unique([userId, stackId])
+  @@index([userId, isActive])
+}
+
+model UserChallenge {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id])
+  challengeId String
+  challenge   Challenge @relation(fields: [challengeId], references: [id])
+  status      String    @default("not_started") // 'not_started' | 'in_progress' | 'completed'
+  startedAt   DateTime?
+  completedAt DateTime?
+  responses   String?   // JSON with user responses
+  score       Int?      // optional scoring
+
+  @@unique([userId, challengeId])
+}
+
+// ============================================
+// Gamification System
+// ============================================
+
+model UserGamification {
+  id            String    @id @default(cuid())
+  userId        String    @unique
+  user          User      @relation(fields: [userId], references: [id])
+
+  totalXp       Int       @default(0)
+  currentLevel  Int       @default(1)
+
+  currentStreak Int       @default(0)
+  longestStreak Int       @default(0)
+  lastActiveAt  DateTime?
+
+  challengesCompleted Int @default(0)
+  stacksCompleted     Int @default(0)
+  totalTimeSpent      Int @default(0)
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model Badge {
+  id          String      @id @default(cuid())
+  slug        String      @unique
+  name        String
+  description String
+  icon        String
+  category    String      // 'achievement' | 'streak' | 'mastery' | 'hidden'
+  requirement String      // JSON with conditions
+  xpReward    Int         @default(0)
+  order       Int         @default(0)
+  userBadges  UserBadge[]
+}
+
+model UserBadge {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  badgeId   String
+  badge     Badge    @relation(fields: [badgeId], references: [id])
+  earnedAt  DateTime @default(now())
+
+  @@unique([userId, badgeId])
+}
