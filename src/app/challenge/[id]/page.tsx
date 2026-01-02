@@ -257,7 +257,7 @@ export default function ChallengePage() {
   useEffect(() => {
     if (isComplete && !xpAwarded && challenge) {
       const awardXp = async () => {
-        const baseXp = XP_VALUES.CHALLENGE_COMPLETE;
+        const baseXp = XP_VALUES.challenge_complete;
         const multiplier = CHALLENGE_XP_MULTIPLIERS[challenge.type as keyof typeof CHALLENGE_XP_MULTIPLIERS] || 1;
         const xpAmount = Math.round(baseXp * multiplier);
 
