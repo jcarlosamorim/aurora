@@ -5,6 +5,9 @@ export { GoldenOrb } from './GoldenOrb';
 export { TiltCard } from './TiltCard';
 export { ParallaxSection, ParallaxLayer, ParallaxFloaters } from './ParallaxSection';
 
+// Navigation
+export { Header } from './Header';
+
 // Page sections
 export { Hero } from './Hero';
 export { ForWhoSection } from './ForWhoSection';

@@ -2,6 +2,7 @@ import {
   AuroraBackground,
   FloatingParticles,
   ParallaxSection,
+  Header,
   Hero,
   ForWhoSection,
   HowItWorks,
@@ -16,6 +17,9 @@ import {
 export default function LandingPage() {
   return (
     <main className="min-h-screen bg-[var(--background)] relative overflow-x-hidden">
+      {/* Navigation */}
+      <Header />
+
       {/* Magical background effects */}
       <AuroraBackground />
       <FloatingParticles />
